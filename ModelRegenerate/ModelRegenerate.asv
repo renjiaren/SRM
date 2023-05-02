@@ -1,0 +1,117 @@
+classdef ModelRegenerate
+    properties
+        creobridgePath
+        tempFolderPath
+        modelPath
+        IBSPath
+        pauseTime
+        parameters
+        value
+        modelName
+        parameterAndValue
+    end
+    
+    methods
+        function obj = ModelRegenerate(creobridgePath, tempFolderPath, ...
+                modelPath, modelName, IBSPath, pauseTime, parameters, value)
+            obj.creobridgePath = creobridgePath;
+            obj.tempFolderPath = tempFolderPath;
+            obj.modelPath = modelPath;
+            obj.modelName = modelName;
+            obj.IBSPath = IBSPath;
+            obj.pauseTime = pauseTime;
+            obj.parameters = parameters;
+            obj.value = value;
+            for c = 1:length(obj.parameters)
+                obj.parameterAndValue = sprintf('%s%s=%f;', obj.parameterAndValue, obj.parameters(c), obj.value(c));
+            end
+        end
+        
+        function creoCommandReady(obj)
+            fid = fopen([obj.tempFolderPath, '\CreoCommandReady.txt'], 'w');
+            fprintf(fid, '%s', '');
+            fclose(fid);
+            pause(obj.pauseTime);
+        end
+        
+        function loadModel(obj)
+            fid = fopen([obj.tempFolderPath, '\CreoCommand.txt'], 'w');
+            fprintf(fid, '%s\n%s\\%s%s', 'LOAD_MODEL', obj.modelPath, obj.modelName, '.prt');
+            fclose(fid);
+            pause(obj.pauseTime);
+            creoCommandReady(obj);
+        end
+        
+        function setParameters(obj)
+            fid = fopen([obj.tempFolderPath, '\CreoCommand.txt'], 'w');
+            fprintf(fid, '%s\n', 'SET_PARAMT_REGEN');
+            for c = 1:length(obj.parameters)
+                fprintf(fid, '%s=%f\n', obj.parameters(c), obj.value(c));
+                %obj.parameterAndValue = [obj.parameterAndValue obj.parameters(c) obj.value(c)];
+                obj.parameterAndValue = [1];
+            end
+            fclose(fid);
+            pause(obj.pauseTime);
+            creoCommandReady(obj);
+        end
+        
+        function saveModel(obj)
+            fid = fopen([obj.tempFolderPath, '\CreoCommand.txt'], 'w');
+            fprintf(fid, '%s', 'SAVE_MODEL');
+            fclose(fid);
+            pause(obj.pauseTime);
+            creoCommandReady(obj);
+        end
+        
+        function saveExtraModel(obj)
+            path = sprintf('%s%s%s', obj.modelPath, '\', obj.parameterAndValue);
+            mkdir(path);
+            fid = fopen([obj.tempFolderPath, '\CreoCommand.txt'], 'w');
+            fprintf(fid, '%s\n%s', 'EXPORT_MODEL_CREO', path);
+            fclose(fid);
+            pause(obj.pauseTime);
+            creoCommandReady(obj);
+        end
+        
+        function exportModel(obj)
+            fid = fopen([obj.tempFolderPath, '\CreoCommand.txt'], 'w');
+            fprintf(fid, '%s\n%s\\%s%s', 'EXPORT_MODEL_SAT', obj.IBSPath, obj.modelName, '.sat');
+            fclose(fid);
+            pause(obj.pauseTime);
+            creoCommandReady(obj);
+        end
+        
+        function stop(obj)
+            fid = fopen([obj.tempFolderPath, '\CreoCommand.txt'], 'w');
+            fprintf(fid, '%s', 'STOP');
+            fclose(fid);
+            pause(obj.pauseTime);
+            creoCommandReady(obj);
+        end
+        
+        function editCreobridgePath(obj)
+            fid = fopen([obj.creobridgePath, '\protk.dat'], 'w');
+            fprintf(fid, '%s %s\n', 'NAME', 'creobridge');
+            fprintf(fid, '%s %s%s\n', 'EXEC_FILE', obj.creobridgePath, '\creobridge\x64\Release\jian.dll');
+            fprintf(fid, '%s %s%s\n', 'TEXT_DIR', obj.creobridgePath, '\text');
+            fprintf(fid, '%s %s\n', 'STARTUP', 'dll');
+            fprintf(fid, '%s\n', 'ALLOW_STOP TRUE');
+            fprintf(fid, '%s\n', 'DELAY_START FALSE');
+            fprintf(fid, '%s', 'END');
+            fclose(fid);
+            fid = fopen([obj.creobridgePath, '\config.txt'], 'w');
+            fclose(fid);
+        end
+        
+        function execute(obj)
+            path = sprintf('%s', obj.tempFolderPath);
+            mkdir(path);
+            obj.loadModel();
+            obj.setParameters();
+            obj.saveModel();
+            obj.saveExtraModel();
+            obj.exportModel();
+        end
+    end
+end
+

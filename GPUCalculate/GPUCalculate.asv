@@ -1,0 +1,30 @@
+classdef GPUCalculate
+    properties
+        IBSPath
+        modelName
+    end
+    
+    methods
+        function obj = GPUCalculate(IBSPath, modelName)
+            obj.IBSPath = IBSPath
+            obj.modelName = modelName
+        end
+        
+        function calculate(obj)
+            cd(obj.IBSPath)
+            % 离散
+            cmd = ['SATSplitter.exe ', obj.modelName, '.sat \\ normal 0.2'];
+            system(cmd);
+            % 燃面退移
+%             cmd = [obj.IBSPath, '\RunGPU.bat -10 8 1780 0.001 1 256 0'];
+%             cmd
+%             system(cmd);
+            % 计算内弹道             
+            system('BalsZero.exe')
+        end
+        
+        function execute(obj)
+            obj.calculate();
+        end
+    end
+end

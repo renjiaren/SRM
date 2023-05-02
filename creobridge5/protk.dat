@@ -1,0 +1,7 @@
+NAME creobridge
+EXEC_FILE E:\SRM\SRM\creobridge5\creobridge\x64\Release\jian.dll
+TEXT_DIR E:\SRM\SRM\creobridge5\text
+STARTUP dll
+ALLOW_STOP TRUE
+DELAY_START FALSE
+END
